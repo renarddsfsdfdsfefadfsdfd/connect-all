@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connect All — Private Server</title>
+  <link rel="stylesheet" href="css/mac.css" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body class="standalone">
+  <div class="standalone-shell">
+    <header class="standalone-menubar">
+      <span class="wordmark">CA</span>
+      <span class="title">Private Server</span>
+      <span class="spacer"></span>
+      <span class="server-status-line"><span class="led" id="hdr-led"></span><span id="hdr-state">—</span></span>
+      <button class="btn small" id="close-btn">×</button>
+    </header>
+    <main class="standalone-content" id="content"></main>
+    <div class="toasts" id="toasts"></div>
+    <div class="dialog-layer" id="dialogs"></div>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/server-window.js"></script>
+</body>
+</html>

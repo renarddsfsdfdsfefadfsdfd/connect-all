@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Connect All (CA)"
+abstract: "A private desktop hub for long-distance couples: end-to-end encrypted chat, WebRTC video with a 1:4 shared-movie split, a shared ICS calendar, and an opt-in local Connect Intelligence summarizer."
+authors:
+  - family-names: ZHANG
+    given-names: Yaolin
+    affiliation: "The Hong Kong University of Science and Technology (Guangzhou), Function Hub, Sustainable Energy and Environment"
+version: 1.0.0
+date-released: "2026-11-04"
+license: MIT
+repository-code: "https://github.com/renarddsfsdfdsfefadfsdfd/connect-all"
+url: "https://github.com/renarddsfsdfdsfefadfsdfd/connect-all"
+keywords:
+  - electron
+  - webrtc
+  - end-to-end encryption
+  - calendar
+  - privacy
+  - long-distance relationships
+  - desktop

@@ -1,0 +1,13 @@
+node_modules/
+.cache/
+dist/
+dist-server/
+out/
+test/.tmp/
+*.log
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+secrets.json

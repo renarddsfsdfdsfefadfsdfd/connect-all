@@ -1,0 +1,44 @@
+{
+  "name": "connect-all",
+  "productName": "Connect All",
+  "version": "1.0.0",
+  "description": "Connect All (CA) — a private desktop hub for long-distance couples: chat, video, shared calendar, and local Connect Intelligence.",
+  "main": "app/main.js",
+  "author": {
+    "name": "Yaolin ZHANG",
+    "affiliation": "The Hong Kong University of Science and Technology (Guangzhou), Function Hub, Sustainable Energy and Environment"
+  },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node test/run.js",
+    "test:node": "node test/run.js --node-only",
+    "pack": "electron-builder --dir",
+    "dist:mac": "electron-builder --mac zip",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder --mac --win --linux",
+    "test:e2e": "node tools/e2e.js",
+    "showcase": "node tools/showcase.js",
+    "serve": "node server/ca-server.js",
+    "dist:dmg": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0"
+  },
+  "desktopName": "connect-all",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/renarddsfsdfdsfefadfsdfd/connect-all.git"
+  },
+  "bugs": {
+    "url": "https://github.com/renarddsfsdfdsfefadfsdfd/connect-all/issues"
+  },
+  "homepage": "https://github.com/renarddsfsdfdsfefadfsdfd/connect-all#readme",
+  "engines": {
+    "node": ">=20"
+  }
+}

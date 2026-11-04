@@ -1,0 +1,79 @@
+appId: com.yaolin.connectall
+productName: Connect All
+copyright: © 2026 Yaolin ZHANG
+directories:
+  output: dist
+  buildResources: build
+files:
+  - app/**/*
+  - server/**/*
+  - package.json
+  - "!**/*.map"
+  - "!**/*.md"
+asar: true
+artifactName: ConnectAll-${version}-${os}-${arch}.${ext}
+electronDownload:
+  cache: .cache/electron
+publish: null
+
+mac:
+  category: public.app-category.social-networking
+  icon: build/icon.icns
+  darkModeSupport: false
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  extendInfo:
+    NSHumanReadableCopyright: © 2026 Yaolin ZHANG
+    NSHighResolutionCapable: true
+    NSCameraUsageDescription: Connect All needs the camera for video calls between partners.
+    NSMicrophoneUsageDescription: Connect All needs the microphone for voice and video calls.
+    NSLocalNetworkUsageDescription: Connect All discovers your partner's device on the local network.
+    NSScreenCaptureUsageDescription: Connect All needs screen recording to share a movie with your partner.
+    NSSupportsAutomaticGraphicsSwitching: true
+  target:
+    - target: zip
+      arch: [universal]
+dmg:
+  title: Connect All ${version}
+  contents:
+    - x: 140
+      y: 190
+      type: file
+    - x: 400
+      y: 190
+      type: link
+      path: /Applications
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Connect All
+  artifactName: ConnectAll-Setup-${version}.${ext}
+portable:
+  artifactName: ConnectAll-Portable-${version}.${ext}
+
+linux:
+  icon: build/icon.png
+  category: Network
+  executableName: connect-all
+  syncDesktopName: true
+  maintainer: Yaolin ZHANG
+  synopsis: Private hub for long-distance couples
+  description: Connect All — chat, video, shared calendar and local Connect Intelligence for two people.
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: tar.gz
+      arch: [x64]
+appImage:
+  artifactName: ConnectAll-${version}-${arch}.${ext}

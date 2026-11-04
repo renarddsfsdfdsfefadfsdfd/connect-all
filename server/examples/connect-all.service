@@ -1,0 +1,19 @@
+[Unit]
+Description=Connect All relay
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/connect-all/server
+ExecStart=/usr/bin/node /opt/connect-all/server/ca-server.js --port 8787 --data /var/lib/connect-all --quota-mb 1024
+Restart=always
+RestartSec=2
+User=connectall
+Group=connectall
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/connect-all
+
+[Install]
+WantedBy=multi-user.target

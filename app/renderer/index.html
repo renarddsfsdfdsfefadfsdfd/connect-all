@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connect All</title>
+  <link rel="stylesheet" href="css/mac.css" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="menubar" id="menubar">
+      <button class="menubar-logo" id="menubar-logo" title="Connect All" aria-label="Connect All">
+        <span class="wordmark">CA</span>
+      </button>
+      <nav class="menubar-menus" id="menus"></nav>
+      <div class="menubar-right" id="menubar-right"></div>
+    </header>
+
+    <main class="desktop" id="desktop">
+      <aside class="icon-rail" id="icons"></aside>
+      <div class="windows" id="windows"></div>
+      <div class="toasts" id="toasts"></div>
+      <div class="dialog-layer" id="dialogs"></div>
+    </main>
+
+    <footer class="statusbar" id="statusbar"></footer>
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/video.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/ci.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
