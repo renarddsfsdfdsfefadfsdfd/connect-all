@@ -141,8 +141,10 @@ async function main() {
     ca = await cdpConnect(9301);
     cb = await cdpConnect(9302);
     console.log('CDP connected');
-    await ca.evaluate(`window.CA && CA.snap ? true : false`);
-    await cb.evaluate(`window.CA && CA.snap ? true : false`);
+    // Signed apps can take a little longer to boot; do not evaluate against a
+    // half-loaded renderer.
+    await ca.waitFor(`!!(window.CA && CA.snap)`, 'A renderer ready', 15000);
+    await cb.waitFor(`!!(window.CA && CA.snap)`, 'B renderer ready', 15000);
 
     // 1. configure server + pair through the same UI IPC the app uses
     for (const c of [ca, cb]) {
