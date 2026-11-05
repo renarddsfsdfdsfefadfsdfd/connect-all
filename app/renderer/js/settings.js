@@ -92,9 +92,7 @@
         text: '中文',
         on: {
           click: async () => {
-            sessionStorage.setItem('ca.reloadApp', 'settings');
             await window.ca.setLang('zh');
-            location.reload();
           },
         },
       }),
@@ -103,9 +101,7 @@
         text: 'English',
         on: {
           click: async () => {
-            sessionStorage.setItem('ca.reloadApp', 'settings');
             await window.ca.setLang('en');
-            location.reload();
           },
         },
       })

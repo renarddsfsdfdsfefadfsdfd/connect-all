@@ -186,9 +186,7 @@ window.CA = {
 
   async function switchLang() {
     const next = CA.lang === 'zh' ? 'en' : 'zh';
-    sessionStorage.setItem('ca.reloadApp', CA.activeApp || '');
     await window.ca.setLang(next);
-    location.reload();
   }
 
   function exportChat() {
@@ -601,7 +599,8 @@ window.CA = {
       if (window.__CA_SIGNALS.length > 200) window.__CA_SIGNALS.shift();
     }
     if (CA.snap && evt.type === 'lang' && evt.payload && evt.payload.lang && evt.payload.lang !== CA.lang) {
-      location.reload();
+      try { sessionStorage.setItem('ca.reloadApp', CA.activeApp || ''); } catch (_) {}
+      window.ca.reload();
       return;
     }
     if (CA.snap) {

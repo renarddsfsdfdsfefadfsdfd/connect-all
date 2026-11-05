@@ -42,6 +42,7 @@ const BUILD = path.join(__dirname, '..', 'build');
 
 let mainWindow = null;
 let widgetWindow = null;
+let mediaAccessInFlight = null;
 let serverWindow = null;
 let tray = null;
 let session = null;
@@ -292,7 +293,9 @@ function createMainWindow() {
   mainWindow.webContents.on('render-process-gone', (event, details) => console.error('renderer gone', details));
   mainWindow.webContents.on('preload-error', (event, p, err) => console.error('preload error', p, err));
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  mainWindow.webContents.on('will-navigate', (e) => e.preventDefault());
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    if (url !== mainWindow.webContents.getURL()) e.preventDefault();
+  });
   return mainWindow;
 }
 
@@ -388,7 +391,9 @@ function createWidgetWindow() {
   });
   widgetWindow.webContents.on('preload-error', (event, p, err) => console.error('widget preload error', p, err));
   widgetWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  widgetWindow.webContents.on('will-navigate', (e) => e.preventDefault());
+  widgetWindow.webContents.on('will-navigate', (e, url) => {
+    if (url !== widgetWindow.webContents.getURL()) e.preventDefault();
+  });
   return widgetWindow;
 }
 
@@ -470,7 +475,9 @@ function createServerWindow() {
   });
   serverWindow.webContents.on('preload-error', (event, p, err) => console.error('server preload error', p, err));
   serverWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  serverWindow.webContents.on('will-navigate', (e) => e.preventDefault());
+  serverWindow.webContents.on('will-navigate', (e, url) => {
+    if (url !== serverWindow.webContents.getURL()) e.preventDefault();
+  });
   return serverWindow;
 }
 
@@ -624,7 +631,7 @@ function rebuildAppMenu() {
             dialog.showMessageBox({
               type: 'info',
               title: 'Connect All',
-              message: 'Connect All (CA) 1.0.0',
+              message: 'Connect All (CA) ' + app.getVersion(),
               detail:
                 (zh ? '为异地恋做的私有桌面中枢。\n' : 'A private desktop hub for long-distance couples.\n') +
                 (zh
@@ -716,7 +723,7 @@ function registerIpc() {
     dialog.showMessageBox(mainWindow, {
       type: 'info',
       title: 'Connect All',
-      message: 'Connect All 1.0.0',
+      message: 'Connect All ' + app.getVersion(),
       detail:
         'Connect All (CA)\n' +
         'Chat · Video · Calendar · Connect Intelligence\n\n' +
@@ -884,26 +891,41 @@ function registerIpc() {
   });
   handle('ca:media-access', async () => {
     if (process.platform !== 'darwin') return { camera: 'granted', microphone: 'granted' };
-    const ask = async (kind) => {
-      try {
-        return (await systemPreferences.getMediaAccessStatus(kind)) || 'unknown';
-      } catch (_) {
-        return 'unknown';
-      }
-    };
-    let camera = await ask('camera');
-    let microphone = await ask('microphone');
-    if (camera !== 'granted') {
-      try {
-        if (await systemPreferences.askForMediaAccess('camera')) camera = 'granted';
-      } catch (_) {}
-    }
-    if (microphone !== 'granted') {
-      try {
-        if (await systemPreferences.askForMediaAccess('microphone')) microphone = 'granted';
-      } catch (_) {}
-    }
-    return { camera, microphone };
+    if (mediaAccessInFlight) return mediaAccessInFlight;
+    mediaAccessInFlight = (async () => {
+      const ask = async (kind) => {
+        let current = 'unknown';
+        try {
+          current = (await systemPreferences.getMediaAccessStatus(kind)) || 'unknown';
+        } catch (_) {}
+        // Ask at most once, and only while macOS still says "not determined".
+        // Calling askForMediaAccess on a denied/restricted app is what caused
+        // the permission dialog to reappear on every call.
+        if (current !== 'not-determined') return current;
+        try {
+          return (await systemPreferences.askForMediaAccess(kind)) ? 'granted' : 'denied';
+        } catch (_) {
+          return current;
+        }
+      };
+      return { camera: await ask('camera'), microphone: await ask('microphone') };
+    })().finally(() => {
+      mediaAccessInFlight = null;
+    });
+    return mediaAccessInFlight;
+  });
+
+  handle('ca:open-media-settings', ({ kind } = {}) => {
+    if (process.platform !== 'darwin') return { ok: false };
+    const pane = kind === 'microphone' ? 'Privacy_Microphone' : 'Privacy_Camera';
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?' + pane);
+    return { ok: true };
+  });
+
+  handle('ca:reload-window', (payload, event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) win.reload();
+    return true;
   });
 
   handle('ca:rtc-signal', (payload) => ({ ok: s().sendSignal(payload || {}) }));

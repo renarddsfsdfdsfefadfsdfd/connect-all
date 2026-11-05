@@ -111,11 +111,11 @@ Connect All 的取舍：
 
 ### 安装包
 
-- macOS：`ConnectAll-1.0.0-mac-universal.zip`（Intel + Apple Silicon 通用；解压后拖入 Applications）
+- macOS：`ConnectAll-1.0.2-mac-universal.zip`（Intel + Apple Silicon 通用；解压后拖入 Applications）
   - 如需 DMG：在允许 `hdiutil` 的普通终端里跑 `pnpm dist:dmg`（本机构建沙箱不允许创建磁盘映像）
-- Windows：`ConnectAll-Setup-1.0.0.exe` / `ConnectAll-Portable-1.0.0.exe`
-- Linux：`ConnectAll-1.0.0-x86_64.AppImage` / `ConnectAll-1.0.0-linux-x64.tar.gz`
-- 校验和：`SHA256SUMS.txt`；源码包：`ConnectAll-1.0.0-source.zip`
+- Windows：`ConnectAll-Setup-1.0.2.exe` / `ConnectAll-Portable-1.0.2.exe`
+- Linux：`ConnectAll-1.0.2-x86_64.AppImage` / `ConnectAll-1.0.2-linux-x64.tar.gz`
+- 校验和：`SHA256SUMS.txt`；源码包：`ConnectAll-1.0.2-source.zip`
 
 > 构建**未签名**（没有 Apple Developer ID / Windows 证书）。
 > macOS 首次打开：右键 → 打开；若被 Gatekeeper 拦，`系统设置 → 隐私与安全性 → 仍要打开`。
@@ -249,6 +249,8 @@ tools/                    图标、E2E、showcase
 ```
 
 ---
+
+[更新记录](CHANGELOG.md) · [最新 Release](https://github.com/renarddsfsdfdsfefadfsdfd/connect-all/releases)
 
 ## 作者
 

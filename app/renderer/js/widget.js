@@ -145,7 +145,13 @@
     }, 15000);
     window.caWidget.onState((next) => {
       data = next;
-      window.CA_LANG = data.lang || window.CA_LANG;
+      const lang = data.lang || window.CA_LANG;
+      if (lang !== window.CA_LANG) {
+        window.CA_LANG = lang;
+        renderFrame();
+        return;
+      }
+      window.CA_LANG = lang;
       render();
     });
   }

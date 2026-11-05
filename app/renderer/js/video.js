@@ -52,6 +52,9 @@
     els: null,
     lastTick: 0,
     ringTimer: null,
+    mediaAccessPromise: null,
+    cameraError: '',
+    micError: '',
   };
 
   const QC = { auto: 1200, saver: 350, hd: 3000 };
@@ -73,32 +76,183 @@
   /* Media                                                               */
   /* ------------------------------------------------------------------ */
 
+  const CONTINUITY_CAM = /(iphone|ipad|continuity|desk view|接续|连续互通)/i;
+  const BUILTIN_CAM = /(facetime|built.?in|内置|内建|macbook|isight|integrated)/i;
+
+  function stopLocalMedia() {
+    if (!V.localStream) return;
+    for (const t of V.localStream.getTracks()) {
+      try { t.stop(); } catch (_) {}
+    }
+    V.localStream = null;
+  }
+
+  function liveTrack(kind) {
+    if (!V.localStream) return null;
+    const list = kind === 'video' ? V.localStream.getVideoTracks() : V.localStream.getAudioTracks();
+    return list.find((t) => t.readyState === 'live') || null;
+  }
+
+  async function mediaAccessOnce() {
+    if (!V.mediaAccessPromise) {
+      V.mediaAccessPromise = window.ca.video.mediaAccess().catch(() => ({ camera: 'unknown', microphone: 'unknown' }));
+    }
+    return V.mediaAccessPromise;
+  }
+
+  async function cameraCandidates() {
+    let list = [];
+    try { list = await navigator.mediaDevices.enumerateDevices(); } catch (_) {}
+    const cams = list.filter((d) => d.kind === 'videoinput');
+    const cfg = (CA.snap && CA.snap.settings && CA.snap.settings.video) || {};
+    const ids = [];
+    const add = (id) => { if (id && !ids.includes(id)) ids.push(id); };
+    // Respect an explicitly selected camera first.
+    if (cfg.cameraId && cams.some((d) => d.deviceId === cfg.cameraId)) add(cfg.cameraId);
+    // Prefer the built-in camera. macOS otherwise often picks an iPhone
+    // Continuity Camera, and two Macs near the same iPhone cannot both use it.
+    for (const d of cams.filter((x) => BUILTIN_CAM.test(x.label || ''))) add(d.deviceId);
+    for (const d of cams.filter((x) => !CONTINUITY_CAM.test(x.label || ''))) add(d.deviceId);
+    for (const d of cams) add(d.deviceId);
+    return ids;
+  }
+
+  function videoConstraints(deviceId) {
+    const base = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24 } };
+    return deviceId ? Object.assign({}, base, { deviceId: { exact: deviceId } }) : base;
+  }
+
+  function audioConstraints(useSelected = true) {
+    const cfg = (CA.snap && CA.snap.settings && CA.snap.settings.video) || {};
+    const base = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+    if (useSelected && cfg.micId) return Object.assign({}, base, { deviceId: { exact: cfg.micId } });
+    return base;
+  }
+
+  function adoptStream(stream) {
+    V.localStream = stream;
+    const video = stream.getVideoTracks().length > 0;
+    const audio = stream.getAudioTracks().length > 0;
+    V.cameraError = video ? '' : 'unavailable';
+    V.micError = audio ? '' : 'unavailable';
+    if (!video) V.cameraOn = false;
+    if (!audio) V.muted = true;
+  }
+
   async function ensureLocalMedia() {
-    if (V.localStream) return V.localStream;
-    const cfg = CA.snap.settings.video;
-    const video = cfg.cameraId ? { deviceId: { exact: cfg.cameraId } } : { width: 1280, height: 720, frameRate: 24 };
-    const audio = cfg.micId
-      ? { deviceId: { exact: cfg.micId } }
-      : { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+    // Reuse only a complete, live stream. A camera track that ended (sleep,
+    // permission change, another app grabbing it) must be reacquired.
+    if (V.localStream && liveTrack('video') && liveTrack('audio')) return V.localStream;
+    stopLocalMedia();
+
+    const access = await mediaAccessOnce();
+    const cameraIds = await cameraCandidates();
+    const primaryCamera = cameraIds[0] || '';
+    const video = videoConstraints(primaryCamera);
+    const audio = audioConstraints();
+
+    // One combined request keeps the normal macOS prompt to a single dialog.
     try {
-      await window.ca.video.mediaAccess();
-    } catch (_) {}
-    try {
-      V.localStream = await navigator.mediaDevices.getUserMedia({ video, audio });
-    } catch (err) {
-      console.warn('camera/mic unavailable', err);
+      const combined = await navigator.mediaDevices.getUserMedia({ video, audio });
+      adoptStream(combined);
+      return V.localStream;
+    } catch (combinedErr) {
+      console.warn('combined camera/mic request failed', combinedErr && combinedErr.name, combinedErr && combinedErr.message);
+    }
+
+    // If either device failed, request them separately so one bad device does
+    // not discard the other. This is the Mac-Mac camera bug: a mic failure used
+    // to fall back to audio-only and silently drop the camera.
+    let videoStream = null;
+    let audioStream = null;
+    let videoErr = null;
+    let audioErr = null;
+    // Try every candidate camera, not just the system default. If the
+    // configured camera is a Continuity Camera or is already in use, the next
+    // built-in camera can still work.
+    const tryCameras = cameraIds.length ? cameraIds : [''];
+    for (const id of tryCameras) {
       try {
-        V.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        toast(T('video.permission_denied'), 'err');
-      } catch (err2) {
-        try {
-          V.localStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        } catch (err3) {
-          throw new Error(T('video.permission_denied'));
-        }
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(id) });
+        if (videoStream) break;
+      } catch (err) {
+        videoErr = err;
       }
     }
+    if (!videoStream && tryCameras.length && tryCameras[tryCameras.length - 1] !== '') {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints('') });
+      } catch (err) {
+        videoErr = err;
+      }
+    }
+    try {
+      audioStream = await navigator.mediaDevices.getUserMedia({ audio });
+    } catch (err) {
+      audioErr = err;
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints(false) });
+      } catch (err2) {
+        audioErr = err2;
+      }
+    }
+
+    const tracks = [];
+    if (videoStream) tracks.push(...videoStream.getVideoTracks());
+    if (audioStream) tracks.push(...audioStream.getAudioTracks());
+    if (!tracks.length) {
+      const denied =
+        access.camera === 'denied' ||
+        access.camera === 'restricted' ||
+        access.microphone === 'denied' ||
+        access.microphone === 'restricted' ||
+        (videoErr && videoErr.name === 'NotAllowedError') ||
+        (audioErr && audioErr.name === 'NotAllowedError');
+      throw new Error(denied ? T('video.permission_denied') : T('video.camera_unavailable'));
+    }
+    adoptStream(new MediaStream(tracks));
+    if (!videoStream) {
+      toast((videoErr && videoErr.name === 'NotAllowedError') ? T('video.permission_denied') : T('video.camera_unavailable'), 'err');
+    }
+    if (!audioStream) toast(T('video.mic_unavailable'), 'err');
     return V.localStream;
+  }
+
+  async function reacquireCamera() {
+    if (!V.pc) return;
+    try {
+      const ids = await cameraCandidates();
+      const candidates = ids.length ? ids : [''];
+      let stream = null;
+      for (const id of candidates) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(id) });
+          if (stream) break;
+        } catch (_) {}
+      }
+      if (!stream) stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints('') });
+      const track = stream.getVideoTracks()[0];
+      if (!track) throw new Error('no video track');
+      if (!V.localStream) V.localStream = new MediaStream();
+      for (const old of V.localStream.getVideoTracks()) {
+        try { old.stop(); } catch (_) {}
+        V.localStream.removeTrack(old);
+      }
+      V.localStream.addTrack(track);
+      V.cameraOn = true;
+      V.cameraError = '';
+      replaceTracks();
+      renderTiles();
+      renderControlLabels();
+      renderStage();
+    } catch (err) {
+      V.cameraOn = false;
+      V.cameraError = 'unavailable';
+      toast(T('video.camera_unavailable'), 'err');
+      renderTiles();
+      renderControlLabels();
+      renderStage();
+    }
   }
 
   function replaceTracks() {
@@ -1096,11 +1250,13 @@
       t.label.textContent = peerName();
       t.node.classList.toggle('mirror', false);
     }
+    const localVideo = liveTrack('video');
+    const videoOn = Boolean(localVideo && localVideo.enabled);
     for (const key of ['localCall', 'localSide']) {
       const t = V.els.tiles[key];
       t.label.textContent = T('video.self');
       t.node.classList.toggle('mirror', CA.snap.settings.video.mirrorSelf !== false);
-      t.off.classList.toggle('hidden', V.cameraOn);
+      t.off.classList.toggle('hidden', videoOn);
     }
     const active = V.state === 'active';
     const remoteOff = active && !V.remote.cam;
@@ -1112,8 +1268,8 @@
     }
     for (const key of ['localCall', 'localSide']) {
       const t = V.els.tiles[key];
-      if (t && t.empty) t.empty.classList.toggle('hidden', !active || Boolean(V.localStream));
-      if (t) t.off.classList.toggle('hidden', !(active && !V.cameraOn));
+      if (t && t.empty) t.empty.classList.toggle('hidden', !active || Boolean(localVideo));
+      if (t) t.off.classList.toggle('hidden', !(active && !videoOn));
     }
     if (V.els.badge) {
       V.els.badge.classList.toggle('hidden', V.state !== 'active');
@@ -1184,7 +1340,7 @@
       V.els.callBtn.classList.toggle('danger', V.state === 'active' || V.state === 'connecting');
     }
     if (V.els.muteBtn) V.els.muteBtn.textContent = V.muted ? T('video.unmute') : T('video.mute');
-    if (V.els.cameraBtn) V.els.cameraBtn.textContent = V.cameraOn ? T('video.camera') : T('video.camera_off');
+    if (V.els.cameraBtn) V.els.cameraBtn.textContent = liveTrack('video') && V.cameraOn ? T('video.camera') : T('video.camera_off');
     if (V.els.screenBtn) V.els.screenBtn.textContent = V.sharing ? T('video.stop_screen') : T('video.screen');
     if (V.els.shareLabel) V.els.shareLabel.textContent = V.sharing ? 'LIVE' : '';
   }
@@ -1358,9 +1514,20 @@
       class: 'btn',
       text: T('video.camera'),
       on: {
-        click: () => {
+        click: async () => {
+          const track = liveTrack('video');
+          if (!track) {
+            if (V.state === 'active' || V.state === 'connecting') {
+              await reacquireCamera();
+            } else {
+              V.cameraOn = true;
+              renderTiles();
+              renderControlLabels();
+            }
+            return;
+          }
           V.cameraOn = !V.cameraOn;
-          if (V.localStream) for (const t of V.localStream.getVideoTracks()) t.enabled = V.cameraOn;
+          track.enabled = V.cameraOn;
           renderTiles();
           renderControlLabels();
         },
