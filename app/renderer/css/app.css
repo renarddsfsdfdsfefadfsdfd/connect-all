@@ -468,3 +468,124 @@ body.standalone.darwin .standalone-menubar { padding-left: 82px; }
 .chat-recap-slot { padding: 7px 10px 0; flex: 0 0 auto; background: var(--paper); }
 .chat-recap-slot.hidden { display: none; }
 .chat-recap-slot .chat-recap { margin-bottom: 4px; }
+
+/* ============================= CONNECTION GUIDE ============================= */
+.guide-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
+.guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 6px 0 10px; }
+.net-card {
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  padding: 7px 8px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.12);
+  min-width: 0;
+}
+.net-card.vpn { border-left-width: 5px; background: var(--paper-2); }
+.net-card.bridge { border-left-width: 5px; border-left-style: double; }
+.net-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.net-name { font-size: 9px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.net-kind { font-family: var(--mono); font-size: 8px; border: 1px solid var(--ink); padding: 0 4px; flex: 0 0 auto; }
+.net-ip { font-size: 11px; margin-top: 3px; }
+.net-url { font-size: 9px; color: var(--ghost); overflow-wrap: anywhere; margin: 2px 0 5px; }
+.guide-modes { margin: 12px 0 8px; }
+.guide-panel { margin-top: 8px; }
+.guide-panel h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: 0.2px; }
+.guide-steps { margin: 6px 0 8px; padding-left: 18px; font-size: 10.5px; line-height: 1.55; }
+.guide-steps li { margin: 0 0 4px; }
+.guide-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+@media (max-width: 720px) { .guide-grid { grid-template-columns: 1fr; } }
+
+/* ============================= BOOT / STARTUP ============================= */
+.boot-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--desktop, #c9c6c0);
+  cursor: pointer;
+  overflow: hidden;
+}
+.boot-screen::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.045) 0 1px, transparent 1px 3px),
+    radial-gradient(rgba(0,0,0,0.10) 0.5px, transparent 0.7px);
+  background-size: auto, 4px 4px;
+}
+.boot-screen::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,0.035) 3px 4px);
+  mix-blend-mode: multiply;
+}
+.boot-window {
+  position: relative; z-index: 1;
+  width: 430px; max-width: calc(100vw - 40px);
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.35);
+  animation: boot-window-in 360ms steps(5, end) both;
+}
+.boot-titlebar {
+  height: 22px; display: flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid var(--ink);
+  background: repeating-linear-gradient(0deg, var(--ink) 0 1px, var(--paper) 1px 3px);
+  padding: 2px 6px;
+}
+.boot-title {
+  flex: 1; text-align: center; font-family: var(--ui);
+  font-size: 12px; letter-spacing: 0.4px; background: var(--paper);
+  line-height: 15px; padding: 0 8px; border: 1px solid transparent;
+}
+.boot-box {
+  width: 11px; height: 11px; border: 1px solid var(--ink);
+  background: #fff; flex: 0 0 auto; position: relative; z-index: 2;
+}
+.boot-box::after { content: ""; position: absolute; left: 2px; right: 2px; top: 4px; border-top: 1px solid var(--ink); }
+.boot-box.right::after { left: 3px; right: 3px; top: 3px; height: 3px; border: 1px solid var(--ink); border-top: 0; }
+.boot-body {
+  padding: 26px 24px 18px; text-align: center;
+  background-image: radial-gradient(rgba(0,0,0,0.06) 0.5px, transparent 0.7px);
+  background-size: 3px 3px;
+}
+.boot-mac {
+  width: 78px; height: 78px; color: var(--ink);
+  image-rendering: pixelated;
+  animation: boot-face 1400ms steps(2, end) infinite;
+}
+.boot-wordmark {
+  margin-top: 8px; font-family: var(--ui);
+  font-size: 26px; line-height: 1; letter-spacing: 1px;
+}
+.boot-sub {
+  margin-top: 7px; font-family: var(--mono); font-size: 8.5px;
+  letter-spacing: 2.2px; color: var(--ink-soft);
+}
+.boot-progress {
+  width: 240px; height: 12px; margin: 20px auto 8px;
+  border: 1px solid var(--ink); padding: 2px; background: var(--paper);
+}
+.boot-progress i {
+  display: block; height: 100%; width: 0;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 6px, transparent 6px 8px);
+  animation: boot-fill 1450ms steps(14, end) forwards;
+}
+.boot-status {
+  font-family: var(--mono); font-size: 8.5px; color: var(--ghost);
+  letter-spacing: 0.7px; text-transform: uppercase;
+}
+.boot-status span { margin: 0 5px; }
+.boot-foot {
+  display: flex; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--ink); padding: 5px 9px;
+  font-family: var(--mono); font-size: 8px; color: var(--ghost);
+  background: var(--paper-2);
+}
+.boot-screen.boot-exit { opacity: 0; pointer-events: none; transition: opacity 320ms ease; }
+.boot-screen.boot-exit .boot-window { transform: scale(0.985); transition: transform 320ms ease; }
+@keyframes boot-window-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes boot-fill { to { width: 100%; } }
+@keyframes boot-face { 50% { opacity: 0.82; } }
+@media (prefers-reduced-motion: reduce) {
+  .boot-window, .boot-mac { animation: none; }
+  .boot-progress i { animation: none; width: 100%; }
+}

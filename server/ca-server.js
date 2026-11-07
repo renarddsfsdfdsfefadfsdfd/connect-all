@@ -23,7 +23,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { attach } = require('./ws');
 
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 const MAX_BODY = 20 * 1024 * 1024;
 const ROOM_RE = /^[a-f0-9]{16,64}$/;
 const TOKEN_RE = /^[a-f0-9]{16,128}$/;

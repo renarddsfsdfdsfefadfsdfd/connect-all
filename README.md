@@ -48,15 +48,28 @@ Connect All 的取舍：
 |---|---|
 | ![Server](docs/screenshots/server.png) | ![Widget](docs/screenshots/widget.png) |
 
-| 视频（空闲态） | |
+
+| 视频（空闲态） | 启动画面 |
 |---|---|
-| ![Video](docs/screenshots/video.png) | |
+| ![Video](docs/screenshots/video.png) | ![Boot](docs/screenshots/boot.png) |
+
+**启动**：1.0.3 增加 1-bit Macintosh 启动画面（可点击跳过，支持减少动态效果）。
 
 **设计语言**：Macintosh System 6/7 式的 1px 黑边、点阵底纹、条纹标题栏、硬阴影、等宽遥测；不是皮肤，而是把每个控件都按经典 Mac 的物理逻辑重画。配色只用黑、白、纸灰，加极少量状态色（绿/琥珀/红）。
 
 ---
 
-## 3. 功能细节
+## 3. 连接方式（1.0.3 新增）
+
+App 内新增「设置 → 连接指南 / Connection guide」：
+
+- **同一 Wi-Fi**：一台运行本机中继，另一台填它的局域网地址。
+- **不同网络 + VPN**：两台设备先加入同一个 Tailscale / ZeroTier 虚拟网络；主机运行中继，另一台填主机的 VPN 地址。App 会自动检测 `utun` / WireGuard / Tailscale / ZeroTier 地址，并给出可复制的 `http://…:8787`。
+- **公网服务器**：VPS relay + Caddy HTTPS + coturn，适合完全异地、不想依赖 VPN 的情况。
+
+指南内嵌完整中英文步骤；VPN 只解决网络可达，视频如果黑屏仍然需要公网 TURN。
+
+## 4. 功能细节
 
 ### Connect Chat
 
@@ -107,15 +120,15 @@ Connect All 的取舍：
 
 ---
 
-## 4. 安装与首次使用
+## 5. 安装与首次使用
 
 ### 安装包
 
-- macOS：`ConnectAll-1.0.2-mac-universal.zip`（Intel + Apple Silicon 通用；解压后拖入 Applications）
+- macOS：`ConnectAll-1.0.3-mac-universal.zip`（Intel + Apple Silicon 通用；解压后拖入 Applications）
   - 如需 DMG：在允许 `hdiutil` 的普通终端里跑 `pnpm dist:dmg`（本机构建沙箱不允许创建磁盘映像）
-- Windows：`ConnectAll-Setup-1.0.2.exe` / `ConnectAll-Portable-1.0.2.exe`
-- Linux：`ConnectAll-1.0.2-x86_64.AppImage` / `ConnectAll-1.0.2-linux-x64.tar.gz`
-- 校验和：`SHA256SUMS.txt`；源码包：`ConnectAll-1.0.2-source.zip`
+- Windows：`ConnectAll-Setup-1.0.3.exe` / `ConnectAll-Portable-1.0.3.exe`
+- Linux：`ConnectAll-1.0.3-x86_64.AppImage` / `ConnectAll-1.0.3-linux-x64.tar.gz`
+- 校验和：`SHA256SUMS.txt`；源码包：`ConnectAll-1.0.3-source.zip`
 
 > 构建**未签名**（没有 Apple Developer ID / Windows 证书）。
 > macOS 首次打开：右键 → 打开；若被 Gatekeeper 拦，`系统设置 → 隐私与安全性 → 仍要打开`。
@@ -148,7 +161,7 @@ node ca-server.js --port 8787 --data ./ca-data --quota-mb 512
 
 ---
 
-## 5. 数据在哪里
+## 6. 数据在哪里
 
 | 系统 | 数据目录 |
 |---|---|
@@ -174,7 +187,7 @@ logs/            诊断日志
 
 ---
 
-## 6. 从源码运行 / 构建
+## 7. 从源码运行 / 构建
 
 需要 Node 20+ 与 pnpm（仓库已带 Electron 45 的本地缓存配置）。
 
@@ -203,7 +216,7 @@ pnpm dist:linux         # AppImage + tar.gz
 
 ---
 
-## 7. 诚实的限制
+## 8. 诚实的限制
 
 1. **没有 iOS / Android**：Electron 不支持 iOS；桌宠式悬浮也不符合 iOS 规则。手机端需要另做原生或 PWA。
 2. **一次只能和一台设备牵手**（一夫一妻制设计）。换机/重装会生成新的配对密钥，旧的服务器备份无法解密；备份是给「同一对密钥」用的。
@@ -218,7 +231,7 @@ pnpm dist:linux         # AppImage + tar.gz
 
 ---
 
-## 8. 目录结构
+## 9. 目录结构
 
 ```
 app/
@@ -258,7 +271,7 @@ tools/                    图标、E2E、showcase
 The Hong Kong University of Science and Technology (Guangzhou)  
 Function Hub, Sustainable Energy and Environment
 
-## 9. 许可与致谢
+## 10. 许可与致谢
 
 MIT。界面致敬经典 Macintosh；字体使用系统自带（Geneva / PingFang / 系统等宽），不分发 Apple 字体。图标为本项目 32×32 像素画生成。
 

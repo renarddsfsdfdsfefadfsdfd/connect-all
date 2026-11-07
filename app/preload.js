@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('ca', {
   quit: () => invoke('ca:quit'),
   about: () => invoke('ca:about'),
   openExternal: (url) => invoke('ca:open-external', { url }),
+  networkInfo: () => invoke('ca:network-info'),
   copy: (text) => invoke('ca:copy', { text }),
   openPath: (target) => invoke('ca:open-path', { target }),
 

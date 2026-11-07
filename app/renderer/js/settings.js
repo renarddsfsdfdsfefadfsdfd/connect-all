@@ -17,11 +17,13 @@
   let ciTest = null;
   let serverTest = null;
   let serverDraft = null;
+  const guide = { mode: 'vpn', info: null, loading: false, picked: false };
 
   const TABS = [
     { id: 'general', label: 'set.general' },
     { id: 'pairing', label: 'set.pairing' },
     { id: 'server', label: 'set.server' },
+    { id: 'guide', label: 'set.guide' },
     { id: 'ci', label: 'set.ci' },
     { id: 'video', label: 'set.video' },
     { id: 'notify', label: 'set.notify' },
@@ -71,6 +73,7 @@
     if (activeTab === 'general') node = buildGeneral();
     else if (activeTab === 'pairing') node = buildPairing();
     else if (activeTab === 'server') node = buildServer();
+    else if (activeTab === 'guide') node = buildGuide();
     else if (activeTab === 'ci') node = buildCi();
     else if (activeTab === 'video') node = buildVideo();
     else if (activeTab === 'notify') node = buildNotify();
@@ -268,7 +271,10 @@
           : null
       );
     }
-    return section(T('set.pairing'), T('set.pair_need_server'), pairingTabBar(), box);
+    return section(T('set.pairing'), T('set.pair_need_server'), pairingTabBar(), box,
+      h('div', { class: 'row', style: { marginTop: '10px' } },
+        h('button', { class: 'btn small', text: T('guide.open'), on: { click: () => switchTab('guide') } })
+      ));
   }
 
   function pairStatusBox() {
@@ -391,6 +397,152 @@
     toast(T('set.unpaired'));
   }
 
+
+  /* ---------------- connection guide ---------------- */
+
+  function guideKindLabel(kind) {
+    return T(kind === 'vpn' ? 'guide.kind_vpn' : kind === 'bridge' ? 'guide.kind_bridge' : 'guide.kind_lan');
+  }
+
+  function guideNetCard(item) {
+    return h(
+      'div',
+      { class: 'net-card ' + (item.kind || 'lan') },
+      h('div', { class: 'net-card-head' },
+        h('span', { class: 'net-name mono', text: item.name || '?' }),
+        h('span', { class: 'net-kind', text: guideKindLabel(item.kind) })
+      ),
+      h('div', { class: 'net-ip mono', text: item.address || '—' }),
+      h('div', { class: 'net-url mono', text: item.url || '—' }),
+      h('button', {
+        class: 'btn small',
+        text: T('guide.copy_url'),
+        on: { click: async () => { await window.ca.copy(item.url || ''); toast(T('guide.copied'), 'ok'); } },
+      })
+    );
+  }
+
+  async function loadGuideNetwork(force) {
+    if (guide.loading) return;
+    if (guide.info && !force) return;
+    guide.loading = true;
+    try {
+      guide.info = await window.ca.networkInfo();
+    } catch (err) {
+      guide.info = { addresses: [], lan: [], vpn: [], error: err.message };
+    }
+    guide.loading = false;
+    if (!guide.picked && guide.info) {
+      guide.mode = guide.info.vpn && guide.info.vpn.length ? 'vpn' : 'lan';
+    }
+    if (activeTab === 'guide') renderContent();
+  }
+
+  async function guideTest(url, insecure) {
+    if (!url) {
+      toast(T('guide.no_server'), 'err');
+      return;
+    }
+    try {
+      const res = await window.ca.server.test(url, Boolean(insecure));
+      if (res.ok) toast(T('guide.test_ok', { ms: res.latencyMs }), 'ok');
+      else toast(T('guide.test_fail', { err: res.error || 'failed' }), 'err');
+    } catch (err) {
+      toast(T('guide.test_fail', { err: err.message }), 'err');
+    }
+  }
+
+  function guideSteps(keys) {
+    return h('ol', { class: 'guide-steps' }, keys.map((key) => h('li', { text: T(key) })));
+  }
+
+  function guideModeBar() {
+    const modes = [
+      ['lan', 'guide.mode_lan'],
+      ['vpn', 'guide.mode_vpn'],
+      ['public', 'guide.mode_public'],
+    ];
+    return h(
+      'div',
+      { class: 'seg guide-modes' },
+      modes.map(([id, label]) =>
+        h('button', {
+          class: 'seg-btn ' + (guide.mode === id ? 'active' : ''),
+          text: T(label),
+          on: { click: () => { guide.mode = id; guide.picked = true; renderContent(); } },
+        })
+      )
+    );
+  }
+
+  function buildGuide() {
+    if (!guide.info && !guide.loading) setTimeout(() => loadGuideNetwork(false), 20);
+    const info = guide.info;
+    const addresses = (info && info.addresses) || [];
+    const hasVpn = Boolean(info && info.vpn && info.vpn.length);
+    const cards = addresses.length
+      ? addresses.map(guideNetCard)
+      : [h('div', { class: 'hint', text: guide.loading ? T('guide.detecting') : T('guide.no_lan') })];
+    const toolbar = h('div', { class: 'guide-toolbar' },
+      h('button', { class: 'btn small', text: T('guide.refresh'), on: { click: () => { guide.info = null; renderContent(); loadGuideNetwork(true); } } }),
+      h('button', { class: 'btn small', text: T('guide.test_local'), on: { click: () => guideTest('http://127.0.0.1:8787') } }),
+      h('button', { class: 'btn small', text: T('guide.test_current'), on: { click: () => guideTest(CA.snap && CA.snap.server && CA.snap.server.url, CA.snap && CA.snap.server && CA.snap.server.insecure) } })
+    );
+    let panel;
+    if (guide.mode === 'lan') {
+      panel = h('div', { class: 'panel guide-panel' },
+        h('h3', { text: T('guide.lan_title') }),
+        h('p', { class: 'hint', text: T('guide.lan_lede') }),
+        guideSteps(['guide.lan_s1', 'guide.lan_s2', 'guide.lan_s3', 'guide.lan_s4', 'guide.lan_s5']),
+        h('div', { class: 'inline-note', text: T('guide.video_note') })
+      );
+    } else if (guide.mode === 'public') {
+      panel = h('div', { class: 'panel guide-panel' },
+        h('h3', { text: T('guide.public_title') }),
+        h('p', { class: 'hint', text: T('guide.public_lede') }),
+        guideSteps(['guide.public_s1', 'guide.public_s2', 'guide.public_s3', 'guide.public_s4']),
+        h('div', { class: 'guide-actions' },
+          h('button', { class: 'btn', text: T('guide.docs'), on: { click: () => window.ca.openExternal('https://github.com/renarddsfsdfdsfefadfsdfd/connect-all/blob/main/docs/SERVER.md') } })
+        )
+      );
+    } else {
+      panel = h('div', { class: 'panel guide-panel' },
+        h('h3', { text: T('guide.vpn_title') }),
+        h('p', { class: 'hint', text: T('guide.vpn_lede') }),
+        guideSteps(['guide.vpn_s1', 'guide.vpn_s2', 'guide.vpn_s3', 'guide.vpn_s4', 'guide.vpn_s5', 'guide.vpn_s6', 'guide.vpn_s7', 'guide.vpn_s8']),
+        h('div', { class: 'inline-note warn', text: T('guide.warn') }),
+        h('div', { class: 'inline-note', text: T('guide.video_note') }),
+        h('div', { class: 'guide-actions' },
+          h('button', { class: 'btn', text: T('guide.tailscale'), on: { click: () => window.ca.openExternal('https://tailscale.com/download') } }),
+          h('button', { class: 'btn', text: T('guide.zerotier'), on: { click: () => window.ca.openExternal('https://www.zerotier.com/download/') } }),
+          h('button', {
+            class: 'btn',
+            text: T('guide.use_relay'),
+            on: {
+              click: async () => {
+                await window.ca.server.set({ mode: 'relay' });
+                await CA_UI.refreshSnapshot();
+                toast(T('guide.relay_on'), 'ok');
+              },
+            },
+          }),
+          h('button', { class: 'btn', text: T('set.pairing'), on: { click: () => switchTab('pairing') } })
+        )
+      );
+    }
+    return section(
+      T('set.guide'),
+      T('guide.lede'),
+      toolbar,
+      h('div', { class: 'section-label', text: T('guide.network') }),
+      h('div', { class: 'guide-grid' }, ...cards),
+      hasVpn ? null : h('div', { class: 'inline-note warn', text: T('guide.no_vpn') }),
+      h('div', { class: 'inline-note', text: T('guide.host_hint') }),
+      guideModeBar(),
+      panel
+    );
+  }
+
   /* ---------------- server ---------------- */
 
   function buildServer() {
@@ -511,6 +663,9 @@
         h('label', { class: 'field' }, h('span', { text: T('set.insecure') }), insecure, h('span', { class: 'hint', text: T('set.insecure_hint') }))
       ),
       h('div', { class: 'row', style: { marginTop: '8px' } }, saveBtn, testBtn, testResult),
+      h('div', { class: 'row', style: { marginTop: '6px' } },
+        h('button', { class: 'btn small', text: T('guide.open'), on: { click: () => switchTab('guide') } })
+      ),
       h('div', { style: { marginTop: '12px' } }, localBox, backupBox),
       h('div', { class: 'section-label', style: { marginTop: '14px' }, text: T('set.ice') }),
       h('div', { class: 'hint', text: T('set.ice_hint') }),
@@ -933,6 +1088,8 @@
       if (activeTab === 'ci') renderContent();
     } else if (evt.type === 'backup') {
       if (activeTab === 'server') renderContent();
+    } else if (evt.type === 'settings-tab' && evt.payload && evt.payload.tab) {
+      setTab(evt.payload.tab);
     }
   }
 

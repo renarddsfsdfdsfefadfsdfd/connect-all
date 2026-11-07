@@ -525,6 +525,11 @@
         await V.pc.setLocalDescription(answer);
         sendSignal('answer', { type: 'answer', sdp: V.pc.localDescription.sdp });
       }
+      // The offer may have been handled while ensureLocalMedia() was awaiting
+      // the camera/mic. In that case bindTransceivers() ran before tracks
+      // existed; attach them now. Without this, the callee can be "connected"
+      // but send no audio/video.
+      replaceTracks();
       applyQuality();
       updateActivity();
       renderAll();

@@ -622,6 +622,13 @@ function rebuildAppMenu() {
       role: 'help',
       submenu: [
         {
+          label: zh ? '连接指南' : 'Connection guide',
+          click: () => {
+            openApp('settings');
+            setTimeout(() => send(mainWindow, 'ca:event', { type: 'settings-tab', payload: { tab: 'guide' } }), 600);
+          },
+        },
+        {
           label: zh ? '打开数据目录' : 'Open data folder',
           click: () => shell.openPath(app.getPath('userData')),
         },
@@ -706,6 +713,55 @@ function handle(channel, fn) {
       throw new Error(err && err.message ? err.message : String(err));
     }
   });
+}
+
+
+function classifyNetwork(name, address) {
+  const n = String(name || '').toLowerCase();
+  const a = String(address || '');
+  const isVpn =
+    /^(utun|tun|tap|wg|ppp|ipsec|vpn|tailscale|zerotier|zt)/.test(n) ||
+    /(tailscale|zerotier|wireguard|openvpn|vpn)/.test(n) ||
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(a);
+  if (isVpn) return 'vpn';
+  if (/^bridge/.test(n)) return 'bridge';
+  return 'lan';
+}
+
+function networkInfo() {
+  const port = Number((session && session.store.get().server.localRelay.port) || 8787) || 8787;
+  const out = [];
+  let interfaces = {};
+  try {
+    interfaces = os.networkInterfaces();
+  } catch (_) {}
+  for (const [name, addresses] of Object.entries(interfaces)) {
+    for (const item of addresses || []) {
+      if (!item || item.internal) continue;
+      const family = item.family;
+      if (family !== 'IPv4' && family !== 4) continue;
+      if (!item.address || item.address === '0.0.0.0' || item.address.startsWith('169.254.')) continue;
+      const kind = classifyNetwork(name, item.address);
+      out.push({
+        name,
+        address: item.address,
+        kind,
+        url: `http://${item.address}:${port}`,
+        netmask: item.netmask || '',
+      });
+    }
+  }
+  const rank = { vpn: 0, lan: 1, bridge: 2 };
+  out.sort((a, b) => (rank[a.kind] - rank[b.kind]) || a.name.localeCompare(b.name));
+  return {
+    hostname: os.hostname(),
+    platform: process.platform,
+    port,
+    updatedAt: Date.now(),
+    addresses: out,
+    lan: out.filter((x) => x.kind !== 'vpn'),
+    vpn: out.filter((x) => x.kind === 'vpn'),
+  };
 }
 
 function registerIpc() {
@@ -931,6 +987,7 @@ function registerIpc() {
   handle('ca:rtc-signal', (payload) => ({ ok: s().sendSignal(payload || {}) }));
   handle('ca:rtc-media', (payload) => ({ ok: s().sendMediaSync(payload || {}) }));
 
+  handle('ca:network-info', () => networkInfo());
   handle('ca:widget-state', () => widgetState());
   handle('ca:widget-pin', ({ pinned }) => {
     session.setWidgetConfig({ pinned: Boolean(pinned) });

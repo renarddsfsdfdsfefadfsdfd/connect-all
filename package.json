@@ -1,7 +1,7 @@
 {
   "name": "connect-all",
   "productName": "Connect All",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Connect All (CA) — a private desktop hub for long-distance couples: chat, video, shared calendar, and local Connect Intelligence.",
   "main": "app/main.js",
   "author": {

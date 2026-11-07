@@ -1,6 +1,26 @@
 # Changelog
 
+## 1.0.3 — 2026-11-05
+
+### Added
+
+- **Embedded bilingual connection guide** in Settings: same Wi-Fi / LAN, different networks over a VPN mesh, and a public VPS. Includes host/guest instructions, firewall notes, pairing recap, and TURN/video caveats.
+- **Network inspector** lists every IPv4 interface with a copyable `http://<address>:8787` URL and classifies LAN, bridge and VPN addresses (`utun`, WireGuard, Tailscale, ZeroTier, campus VPN). The guide refreshes automatically and switches to the VPN path when a VPN address is present.
+- **One-click relay mode** in the VPN guide, so cross-network links do not waste time on LAN discovery that cannot cross the VPN.
+- **Macintosh startup animation**: a 1-bit startup window with a pixel Mac face, segmented progress bar and pinstripe title bar. Click/Escape skips it; `prefers-reduced-motion` is respected; it is CSS-only and removed after boot.
+
+### Fixed
+
+- **Callee could connect but send no microphone/camera tracks.** If the offer arrived while the camera/mic permission prompt or device acquisition was still pending, the transceivers were bound before tracks existed and were never filled. Tracks are now attached after acquisition, so both Macs send audio/video. This is the likely root cause of the “one Mac camera cannot open” report.
+
+### Notes
+
+- A VPN (Tailscale / ZeroTier / campus VPN) makes the two devices reachable but does not guarantee WebRTC traversal. If video is black while chat works, add a TURN server (see the public-server guide).
+- Campus VPNs often isolate clients; if two devices on campus VPN still cannot reach each other, use Tailscale, ZeroTier, or a public relay.
+- Includes all 1.0.2 fixes: macOS permission prompt behavior, Mac-to-Mac camera fallback, widget close button, and language switching.
+
 ## 1.0.2 — 2026-11-05
+ — 2026-11-05
 
 ### Fixed
 

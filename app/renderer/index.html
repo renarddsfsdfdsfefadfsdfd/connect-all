@@ -9,6 +9,32 @@
   <link rel="stylesheet" href="css/app.css" />
 </head>
 <body>
+  <div id="boot-screen" class="boot-screen" role="status" aria-label="Connect All starting">
+    <div class="boot-window">
+      <div class="boot-titlebar">
+        <span class="boot-box"></span>
+        <span class="boot-title">Connect All</span>
+        <span class="boot-box right"></span>
+      </div>
+      <div class="boot-body">
+        <svg class="boot-mac" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="3" y="3" width="26" height="21" fill="none" stroke="currentColor" stroke-width="2"/>
+          <rect x="3" y="5" width="26" height="2" fill="currentColor"/>
+          <rect x="9" y="11" width="3" height="3" fill="currentColor"/>
+          <rect x="20" y="11" width="3" height="3" fill="currentColor"/>
+          <path d="M10 16c2 4 10 4 12 0" fill="none" stroke="currentColor" stroke-width="2"/>
+          <rect x="13" y="24" width="6" height="3" fill="currentColor"/>
+          <rect x="8" y="27" width="16" height="2" fill="currentColor"/>
+        </svg>
+        <div class="boot-wordmark">CONNECT ALL</div>
+        <div class="boot-sub">PRIVATE DESKTOP HUB</div>
+        <div class="boot-progress"><i></i></div>
+        <div class="boot-status">正在启动 <span>/</span> STARTING UP</div>
+      </div>
+      <div class="boot-foot"><span>CA 1.0.3</span><span>1-BIT EDITION</span></div>
+    </div>
+  </div>
+
   <div id="app">
     <header class="menubar" id="menubar">
       <button class="menubar-logo" id="menubar-logo" title="Connect All" aria-label="Connect All">

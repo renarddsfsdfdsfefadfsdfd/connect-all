@@ -18,6 +18,38 @@ window.CA = {
 (function () {
   const { $, h, icon, toast } = UI;
   const CA = window.CA;
+  const BOOT_T0 = performance.now();
+  let bootFinished = false;
+  let bootSkip = false;
+
+  function finishBoot(force) {
+    const el = document.getElementById('boot-screen');
+    if (!el || bootFinished) return;
+    if (!force && !bootSkip && performance.now() - BOOT_T0 < 1200) {
+      setTimeout(() => finishBoot(false), Math.max(0, 1200 - (performance.now() - BOOT_T0)));
+      return;
+    }
+    bootFinished = true;
+    el.classList.add('boot-exit');
+    setTimeout(() => { try { el.remove(); } catch (_) {} }, 360);
+  }
+
+  function armBootScreen() {
+    const el = document.getElementById('boot-screen');
+    if (!el) return;
+    el.addEventListener('click', () => {
+      bootSkip = true;
+      if (CA.booted) finishBoot(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !bootFinished) {
+        bootSkip = true;
+        if (CA.booted) finishBoot(false);
+      }
+    });
+    // Never leave a dead splash screen if startup fails.
+    setTimeout(() => { if (!CA.booted) finishBoot(true); }, 12000);
+  }
 
   const DEFAULT_LAYOUT = {
     chat: { x: 96, y: 16, w: 560, h: 548, minW: 420, minH: 360 },
@@ -725,12 +757,14 @@ window.CA = {
   /* ------------------------------------------------------------------ */
 
   async function boot() {
+    armBootScreen();
     platformClass();
     CA.layout = loadLayout();
     CA.apps = window.CA_APPS;
     try {
       CA.snap = await window.ca.snapshot();
     } catch (err) {
+      finishBoot(true);
       document.body.appendChild(UI.empty('!', 'Connect All', 'Failed to start: ' + err.message));
       return;
     }
@@ -757,6 +791,7 @@ window.CA = {
       if (window.innerWidth >= 1050) CA.openApp('calendar');
     }
     CA.booted = true;
+    finishBoot(false);
     // Re-check the clock alignment / CI countdown once a minute.
     setInterval(() => updateStatusbar(), 30000);
     if (location.hash === '#test') window.__CA_READY__ = true;
